@@ -23,6 +23,7 @@ from options.train_options import TrainOptions
 from data import create_dataset
 from models import create_model
 from util.visualizer import Visualizer
+import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
     opt = TrainOptions().parse()   # get training options
@@ -34,12 +35,22 @@ if __name__ == '__main__':
     visualizer = Visualizer(opt)   # create a visualizer that display/save images and plots
     total_iters = 0                # the total number of training iterations
     epoch = 0
+    G_real = []
+    G_fake = []
+    D_real = []
+    D_fake = []
+    D_gp = []
+    G = []
+    D = [] 
+    losses_D = []
+    losses_G = []
+    epoch_list = []
     #for epoch in range(opt.epoch_count, opt.niter + opt.niter_decay + 1):    # outer loop for different epochs; we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>
     while total_iters <  opt.total_num_giters:
         epoch_start_time = time.time()  # timer for entire epoch
         iter_data_time = time.time()    # timer for data loading per iteration
         epoch_iter = 0                  # the number of training iterations in current epoch, reset to 0 every epoch
-
+        
         for i, data in enumerate(dataset):  # inner loop within one epoch
             iter_start_time = time.time()  # timer for computation per iteration
 
@@ -58,12 +69,12 @@ if __name__ == '__main__':
                 model.compute_visuals()
                 visualizer.display_current_results(model.get_current_visuals(), int(total_iters/opt.display_freq), opt.display_freq, save_result)
 
-            if total_iters % opt.print_freq == 0:    # print training losses and save logging information to the disk
-                losses = model.get_current_losses()
-                t_comp = (time.time() - iter_start_time) / opt.batch_size
-                visualizer.print_current_losses(epoch, total_iters, losses, t_comp, t_data)
-                if opt.display_id > 0:
-                    visualizer.plot_current_losses(epoch, float(total_iters) / dataset_size, losses)
+#             if total_iters % opt.print_freq == 0:    # print training losses and save logging information to the disk
+#                 losses = model.get_current_losses()
+#                 t_comp = (time.time() - iter_start_time) / opt.batch_size
+#                 visualizer.print_current_losses(epoch, total_iters, losses, t_comp, t_data)
+#                 if opt.display_id > 0:
+#                     visualizer.plot_current_losses(epoch, float(total_iters) / dataset_size, losses)
 
             if total_iters % opt.score_freq == 0:    # print generation scores and save logging information to the disk 
                 scores = model.get_current_scores()
@@ -83,9 +94,73 @@ if __name__ == '__main__':
                 print('saving the model at the end of epoch %d, iters %d' % (epoch, total_iters))
                 model.save_networks('latest')
                 model.save_networks(total_iters)
+               
+            if total_iters % opt.print_freq == 0:
+                loss = model.get_current_losses()
+                loss_list = list(loss.items())
+    #             print(loss_list)
+                G_real.append(loss_list[0][1])
+                G_fake.append(loss_list[1][1])
+                D_real.append(loss_list[2][1])
+                D_fake.append(loss_list[3][1])
+                D_gp.append(loss_list[4][1])
+                
+                losses_G.append(loss_list[5][1])
+                losses_D.append(loss_list[6][1])
+                epoch_list.append(epoch)
 
         epoch += 1
         print('(epoch_%d) End of giters %d / %d \t Time Taken: %d sec' % (epoch, total_iters, opt.total_num_giters, time.time() - epoch_start_time))
 
         #print('End of epoch %d / %d \t Time Taken: %d sec' % (epoch, opt.niter + opt.niter_decay, time.time() - epoch_start_time))
         #model.update_learning_rate()                     # update learning rates at the end of every epoch.
+    
+    
+    with open('./DG_losses.txt', 'w') as the_file:
+        the_file.write(str(losses_D) + '\n')
+        the_file.write(str(losses_G) + '\n')
+        
+    with open('./G_losses.txt', 'w') as the_file:
+        the_file.write(str(G_real) + '\n')
+        the_file.write(str(G_fake) + '\n')
+        
+    with open('./D_losses.txt', 'w') as the_file:
+        the_file.write(str(D_real) + '\n')
+        the_file.write(str(D_fake) + '\n')
+        the_file.write(str(D_gp) + '\n')
+    print('epoch_list',epoch_list)
+    print('losses_D',losses_D)
+    print('losses_G',losses_G)
+    
+    plt.xticks(epoch_list)
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.plot(epoch_list, G_real, label = "G_real")
+    plt.plot(epoch_list, G_fake, label = "G_fake")
+    plt.legend(loc = "upper right")
+    path = "./G_losses.png"
+    plt.savefig(path)
+    plt.show()
+    
+    plt.xticks(epoch_list)
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.plot(epoch_list, D_real, label = "D_real")
+    plt.plot(epoch_list, D_fake, label = "D_fake")
+    plt.plot(epoch_list, D_gp, label = "D_gp")
+    plt.legend(loc = "upper right")
+    path = "./D_losses.png"
+    plt.savefig(path)
+    plt.show()
+
+
+    plt.xticks(epoch_list)
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.plot(epoch_list, losses_D, label = "losses_D")
+    plt.plot(epoch_list, losses_G, label = "losses_G")
+    plt.legend(loc = "upper right")
+    path = "./losses.png"
+    plt.savefig(path)
+    plt.show()
+
