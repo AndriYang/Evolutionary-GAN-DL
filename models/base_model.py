@@ -95,25 +95,6 @@ class BaseModel(ABC):
         """
         return parser
 
-    @abstractmethod
-    def set_input(self, input):
-        """Unpack input data from the dataloader and perform necessary pre-processing steps.
-
-        Parameters:
-            input (dict): includes the data itself and its metadata information.
-        """
-        pass
-
-    @abstractmethod
-    def forward(self):
-        """Run forward pass; called by both functions <optimize_parameters> and <test>."""
-        pass
-
-    @abstractmethod
-    def optimize_parameters(self):
-        """Calculate losses, gradients, and update network weights; called in every training iteration"""
-        pass
-
     def setup(self, opt):
         """Load and print networks; create schedulers
 
@@ -276,11 +257,8 @@ class BaseModel(ABC):
             self.netG.load_state_dict(self.G_candis[idx])
 
         visual_ret = OrderedDict()
-        # gen_visual
-        if not self.opt.cgan:
-            gen_visual = self.netG(self.z_fixed).detach()
-        else:
-            gen_visual = self.netG(self.z_fixed, self.y_fixed).detach()
+        
+        gen_visual = self.netG(self.z_fixed, self.y_fixed).detach()
         self.gen_visual = visualize_imgs(gen_visual, self.N, self.opt.crop_size, self.opt.input_nc)
 
         # real_visual
@@ -292,11 +270,10 @@ class BaseModel(ABC):
         return visual_ret
 
     def get_current_scores(self):
-        if self.opt.model == 'egan':
-            # load current best G
-            F = self.Fitness[:,2]
-            idx = np.where(F==max(F))[0][0]
-            self.netG.load_state_dict(self.G_candis[idx])
+        # load current best G
+        F = self.Fitness[:,2]
+        idx = np.where(F==max(F))[0][0]
+        self.netG.load_state_dict(self.G_candis[idx])
 
         # load current best G
         scores_ret = OrderedDict()
