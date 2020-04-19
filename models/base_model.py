@@ -272,7 +272,7 @@ class BaseModel(ABC):
                     param.requires_grad = requires_grad
 
     # return visualization images. train.py will display these images, and save the images to a html
-    def get_current_visuals(self, path):
+    def get_current_visuals(self, path, epoch):
         if self.opt.model == 'egan':
             # load current best G
             F = self.Fitness[:,2]
@@ -292,14 +292,14 @@ class BaseModel(ABC):
         # real_visual
         self.real_visual = visualize_imgs(self.real_imgs, self.N, self.opt.crop_size, self.opt.input_nc)
         
-        def distribution(imgs, filename, path):
+        def distribution(imgs, filename, path, epoch):
     
             def draw( data, path ) :    
                 plt.figure()
                 d = data.tolist() if isinstance(data, torch.Tensor ) else data
                 plt.plot( d ) 
 #                 path = "results1/"+ filename + "_distribution.png"
-                save_path = path + "/" + filename + "_distribution.png"
+                save_path = path + "/" + str(epoch) + "_" + filename + "_distribution.png"
                 plt.savefig(save_path)
                 plt.show()
             d = torch.empty( imgs.size(0), 53 ) 
@@ -307,8 +307,8 @@ class BaseModel(ABC):
                 d[i] = torch.histc( imgs[i], min=0, max=5, bins=53 )
             draw( d.t(), path )
      
-        distribution(gen_visual, "fake_imgs", path)
-        distribution(self.real_imgs, "real_imgs", path)
+        distribution(gen_visual, "fake_imgs", path, epoch)
+        distribution(self.real_imgs, "real_imgs", path, epoch)
         
         for name in self.visual_names:
             if isinstance(name, str):
