@@ -64,7 +64,7 @@
              save_by_iter: False                         
          save_giters_freq: 100000                        	[default: 10000]
          save_latest_freq: 5000                          
-               score_freq: 130                           	[default: 100]
+               score_freq: 5000                          	[default: 100]
                score_name: ['IS']                        	[default: ['FID', 'IS']]
            serial_batches: False                         
                    suffix:                               

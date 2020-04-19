@@ -12,6 +12,10 @@ from TTUR import fid
 from util.inception import get_inception_score
 from inception_pytorch import inception_utils
 
+import matplotlib.pyplot as plt
+import torch
+from torch.distributions.normal import Normal
+
 class BaseModel(ABC):
     """This class is an abstract base class (ABC) for models.
     To create a subclass, you need to implement the following five functions:
@@ -268,7 +272,7 @@ class BaseModel(ABC):
                     param.requires_grad = requires_grad
 
     # return visualization images. train.py will display these images, and save the images to a html
-    def get_current_visuals(self):
+    def get_current_visuals(self, path):
         if self.opt.model == 'egan':
             # load current best G
             F = self.Fitness[:,2]
@@ -282,14 +286,36 @@ class BaseModel(ABC):
         else:
             gen_visual = self.netG(self.z_fixed, self.y_fixed).detach()
         self.gen_visual = visualize_imgs(gen_visual, self.N, self.opt.crop_size, self.opt.input_nc)
+        
+        
 
         # real_visual
         self.real_visual = visualize_imgs(self.real_imgs, self.N, self.opt.crop_size, self.opt.input_nc)
-
+        
+        def distribution(imgs, filename, path):
+    
+            def draw( data, path ) :    
+                plt.figure()
+                d = data.tolist() if isinstance(data, torch.Tensor ) else data
+                plt.plot( d ) 
+#                 path = "results1/"+ filename + "_distribution.png"
+                save_path = path + "/" + filename + "_distribution.png"
+                plt.savefig(save_path)
+                plt.show()
+            d = torch.empty( imgs.size(0), 53 ) 
+            for i in range( 0, d.size(0) ) :
+                d[i] = torch.histc( imgs[i], min=0, max=5, bins=53 )
+            draw( d.t(), path )
+     
+        distribution(gen_visual, "fake_imgs", path)
+        distribution(self.real_imgs, "real_imgs", path)
+        
         for name in self.visual_names:
             if isinstance(name, str):
                 visual_ret[name] = getattr(self, name)
         return visual_ret
+    
+    
 
     def get_current_scores(self):
         if self.opt.model == 'egan':
