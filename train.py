@@ -24,6 +24,8 @@ from data import create_dataset
 from models import create_model
 from util.visualizer import Visualizer
 import matplotlib.pyplot as plt
+import os
+import shutil
 
 if __name__ == '__main__':
     opt = TrainOptions().parse()   # get training options
@@ -46,6 +48,16 @@ if __name__ == '__main__':
     losses_G = []
     epoch_list = []
     #for epoch in range(opt.epoch_count, opt.niter + opt.niter_decay + 1):    # outer loop for different epochs; we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>
+    
+    init_folder = opt.checkpoints_dir + '/results1'
+    
+    if not os.path.exists(init_folder):
+        os.makedirs(init_folder)
+    else:
+        shutil.rmtree(init_folder)
+        os.makedirs(init_folder)
+        
+        
     while total_iters <  opt.total_num_giters:
         epoch_start_time = time.time()  # timer for entire epoch
         iter_data_time = time.time()    # timer for data loading per iteration
@@ -67,7 +79,7 @@ if __name__ == '__main__':
             if total_iters % opt.display_freq == 0:   # display images on visdom and save images to a HTML file
                 save_result = total_iters % opt.update_html_freq == 0
                 model.compute_visuals()
-                visualizer.display_current_results(model.get_current_visuals(), int(total_iters/opt.display_freq), opt.display_freq, save_result)
+                visualizer.display_current_results(model.get_current_visuals(init_folder), int(total_iters/opt.display_freq), opt.display_freq, save_result)
 
 #             if total_iters % opt.print_freq == 0:    # print training losses and save logging information to the disk
 #                 losses = model.get_current_losses()
@@ -116,15 +128,15 @@ if __name__ == '__main__':
         #model.update_learning_rate()                     # update learning rates at the end of every epoch.
     
     
-    with open('./DG_losses.txt', 'w') as the_file:
+    with open(init_folder + '/DG_losses.txt', 'w') as the_file:
         the_file.write(str(losses_D) + '\n')
         the_file.write(str(losses_G) + '\n')
         
-    with open('./G_losses.txt', 'w') as the_file:
+    with open(init_folder + '/G_losses.txt', 'w') as the_file:
         the_file.write(str(G_real) + '\n')
         the_file.write(str(G_fake) + '\n')
         
-    with open('./D_losses.txt', 'w') as the_file:
+    with open(init_folder + '/D_losses.txt', 'w') as the_file:
         the_file.write(str(D_real) + '\n')
         the_file.write(str(D_fake) + '\n')
         the_file.write(str(D_gp) + '\n')
@@ -138,7 +150,7 @@ if __name__ == '__main__':
     plt.plot(epoch_list, G_real, label = "G_real")
     plt.plot(epoch_list, G_fake, label = "G_fake")
     plt.legend(loc = "upper right")
-    path = "./G_losses.png"
+    path = init_folder + "/G_losses.png"
     plt.savefig(path)
     plt.show()
     
@@ -149,7 +161,7 @@ if __name__ == '__main__':
     plt.plot(epoch_list, D_fake, label = "D_fake")
     plt.plot(epoch_list, D_gp, label = "D_gp")
     plt.legend(loc = "upper right")
-    path = "./D_losses.png"
+    path = init_folder + "/D_losses.png"
     plt.savefig(path)
     plt.show()
 
@@ -160,7 +172,7 @@ if __name__ == '__main__':
     plt.plot(epoch_list, losses_D, label = "losses_D")
     plt.plot(epoch_list, losses_G, label = "losses_G")
     plt.legend(loc = "upper right")
-    path = "./losses.png"
+    path = init_folder + "/losses.png"
     plt.savefig(path)
     plt.show()
 
