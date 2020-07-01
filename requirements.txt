@@ -7,5 +7,5 @@ h5py>=2.7.1
 pillow>=3.1.1
 tqdm>=4.31.1
 scipy==1.1.0
-tensorflow-gpu==1.15
+tensorflow-gpu==1.15.2
 matplotlib
